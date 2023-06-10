@@ -96,7 +96,7 @@ uint8_t* line_fill(uint8_t* addr, uint8_t count, uint8_t mask){
 }
 
 inline void line_paint (uint8_t x, uint8_t y, uint8_t dx, int8_t dy){
-  uint8_t bytes_to_fill;
+  int8_t bytes_to_fill;
   
   uint8_t y_in_bits = (uint8_t)(y+dy); 
   if (y_in_bits<=191){ /* clip at the screen bottom */  
@@ -109,10 +109,8 @@ inline void line_paint (uint8_t x, uint8_t y, uint8_t dx, int8_t dy){
     register uint8_t* screenaddr = &SCREEN [y_in_lines][right_x_in_bytes];
     *screenaddr = PointsR[right_x_in_bits&7];
     
-    bytes_to_fill = (right_x_in_bytes - left_x_in_bytes)&31;
-    while (bytes_to_fill--){
-      *--screenaddr = 0xFF;
-    }
+    bytes_to_fill = (right_x_in_bytes - left_x_in_bytes);
+    if (--bytes_to_fill>0) --screenaddr = line_fill(screenaddr,bytes_to_fill,0xFF);
     *screenaddr = PointsL[left_x_in_bits&7];
     }
   
