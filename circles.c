@@ -1,28 +1,33 @@
 /****************************************************
-* (c)2023 1nd1g0
+* (copyleft)2023 1nd1g0
 * Fast vector graphics test for ZX Spectrum 48K
-* originally developed for SDCC's C89'esque style
-* with HTC in mind, that's why there is no uint8_t etc.
 *
-* CONTROLS: Q,A,O,P,I,K,Break/Space
+* Targets SDCC, being ported to C89 compilers
+* ASSUMES: No (u)int##_t support, TRUE = 1.
+*   short = int16, char = int8
+*
+* CONTROLS:
+*   Q,A,O,P, = move
+*   I,K = change radius
+*   Break/Space = clear screen
 *
 * License: GPLv3
 *
 *****************************************************/
-//Z80 main data types
-#define word unsigned short
-#define byte unsigned char
-#define sbyte signed char
 
-//BORDER HW
-  __sfr __at (0xFFFE) BORDER;
+/* Z80 main data types */
+#define uint16_t unsigned short
+#define uint8_t unsigned char
+#define int8_t signed char
+
+/* BORDER HW */
+ volatile __sfr __at (0xFFFE) BORDER;
  static const enum {Black,Blue,Red,Magenta,Green,Cyan,Yellow,White};
 
-//VRAM HW
-  //Colour attribute pallette without flash bit variants.
-  //Single capital letters left to right encode bits:
-  //Brightness + ink color code letter + paper letter.
-  //blacK,Blue,Red,Magenta,Green,Cyan,Yellow,White
+/* VRAM HW
+    Colour attribute pallette without flash bit variants.
+    Single capital letters encode Brightness + Paper + Ink.
+    blac_K,B_lue,R_ed,M_agenta,G_reen,C_yan,Y_ellow,W_hite */
   enum {KK,KB,KR,KM,KG,KC,KY,KW,
         BK,BB,BR,BM,BG,BC,BY,BW,
         RK,RB,RR,RM,RG,RC,RY,RW,
@@ -39,45 +44,45 @@
         BCK,BCB,BCR,BCM,BCG,BCC,BCY,BCW,
         BYK,BYB,BYR,BYM,BYG,BYC,BYY,BYW,
         BWK,BWB,BWR,BWM,BWG,BWC,BWY,BWW
-        };//colours
-  byte __at (0x4000) SCREEN[192][32];
-  byte __at (0x5800) ATTRS[24][32];
-  inline byte correctscry(byte y){
+        };
+  uint8_t __at (0x4000) SCREEN[192][32];
+  uint8_t __at (0x5800) ATTRS[24][32];
+  inline uint8_t ytolines(uint8_t y){
     return (y & 0xc0)|((y & 7)<<3)|((y & 0x38)>>3);
   }
 
-//BITMAPS
-  const byte PointsR [8] = {0x80,0xC0,0xE0,0xF0,0xF8,0xFC,0xFE,0xFF};
-  const byte PointsL [8] = {0xFF,0x7F,0x3F,0x1F,0xF,7,3,1};
+/* BIT TO BYTE BITMAPS */
+  const uint8_t PointsR [8] = {0x80,0xC0,0xE0,0xF0,0xF8,0xFC,0xFE,0xFF};
+  const uint8_t PointsL [8] = {0xFF,0x7F,0x3F,0x1F,0xF,7,3,1};
 
-//KEYBOARD HW
-  inline byte key(byte row,byte mask){
+/* KEYBOARD HW */
+  inline uint8_t key(uint8_t row,uint8_t mask){
     return (~row&mask)>0;
   }
-  __sfr __banked __at (0x00FE) ROWANY;
+  volatile __sfr __banked __at (0x00FE) ROWANY;
   enum {KEYANY=0x1F};
-  __sfr __banked __at (0xF7FE) ROW15;
+  volatile __sfr __banked __at (0xF7FE) ROW15;
   enum {KEY5=0x10,KEY4=8,KEY3=4,KEY2=2,KEY1=1};
-  __sfr __banked __at (0xEFFE) ROW60;
+  volatile __sfr __banked __at (0xEFFE) ROW60;
   enum {KEY6=0x10,KEY7=8,KEY8=4,KEY9=2,KEY0=1};
-  __sfr __banked __at (0xFBFE) ROWQT;
+  volatile __sfr __banked __at (0xFBFE) ROWQT;
   enum {KEYT=0x10,KEYR=8,KEYE=4,KEYW=2,KEYQ=1};
-  __sfr __banked __at (0xDFFE) ROWYP;
+  volatile __sfr __banked __at (0xDFFE) ROWYP;
   enum {KEYY=0x10,KEYU=8,KEYI=4,KEYO=2,KEYP=1};
-  __sfr __banked __at (0xFDFE) ROWAG;
+  volatile __sfr __banked __at (0xFDFE) ROWAG;
   enum {KEYG=0x10,KEYF=8,KEYD=4,ROW=2,KEYA=1};
-  __sfr __banked __at (0xBFFE) ROWHEN;
+  volatile __sfr __banked __at (0xBFFE) ROWHEN;
   enum {KEYH=0x10,KEYJ=8,KEYK=4,KEYL=2,KEYEN=1};
-  __sfr __banked __at (0xFEFE) ROWSHV;
-  enum {KEYV=0x10,KEYC=8,KEYX=4,KEYZ=2,ROWH=1};
-  __sfr __banked __at (0x7FFE) ROWBSP;
+  volatile __sfr __banked __at (0xFEFE) ROWSHV;
+  enum {KEYV=0x10,KEYC=8,KEYX=4,KEYZ=2,KEYSH=1};
+  volatile __sfr __banked __at (0x7FFE) ROWBSP;
   enum {KEYB=0x10,KEYN=8,KEYM=4,KEYSY=2,KEYSP=1};
 
 
-byte* line_fill(byte* addr, byte count, byte mask){
-  register byte m = mask;
-  register byte* a = addr;
-  switch(count){//TRICK:Duff's device in action
+uint8_t* line_fill(uint8_t* addr, uint8_t count, uint8_t mask){
+  register uint8_t m = mask;
+  register uint8_t* a = addr;
+  switch(count){ /* TRICK: Duff's device in action */
     case 32: *a-- = m;case 31: *a-- = m;case 30: *a-- = m;case 29: *a-- = m;
     case 28: *a-- = m;case 27: *a-- = m;case 26: *a-- = m;case 25: *a-- = m;
     case 24: *a-- = m;case 23: *a-- = m;case 22: *a-- = m;case 21: *a-- = m;
@@ -90,38 +95,33 @@ byte* line_fill(byte* addr, byte count, byte mask){
   return a;
 }
 
-inline void pset (byte x, byte y, byte dx, sbyte dy){
-  byte bytey = (byte)(y+dy);
-BORDER=Red;  
-  if (bytey<=191){//clip on screen bottom
-    byte scry = correctscry(bytey);//common y of the line
-    byte scrx = (x+dx);//right coordinate
-    byte bytex = (scrx>>3);//rounded to byte
-    byte mscrx = (x-dx);//mirrored (left) coordinate
-    byte mbytex = (mscrx>>3);
-    byte bytedx = (bytex - mbytex)&31;//visible bytes to fill
-    byte* psetadr; byte* psetradr; byte* psetladr;
-BORDER=Green;
-    psetadr = &SCREEN [scry][0];
-    psetradr = psetadr + bytex;
-    *psetradr-- = PointsR[scrx&7];
-    *psetradr = 0xFF;
-    psetladr = psetadr + mbytex;   
-    *psetladr = PointsL[mscrx&7];
-BORDER=Blue;
+inline void line_paint (uint8_t x, uint8_t y, uint8_t dx, int8_t dy){
+  uint8_t bytes_to_fill;
+  
+  uint8_t y_in_bits = (uint8_t)(y+dy); 
+  if (y_in_bits<=191){ /* clip at the screen bottom */  
+    uint8_t y_in_lines = ytolines(y_in_bits);
+    uint8_t right_x_in_bits = (x+dx);
+    uint8_t right_x_in_bytes = (right_x_in_bits>>3);
+    uint8_t left_x_in_bits = (x-dx);
+    uint8_t left_x_in_bytes = (left_x_in_bits>>3);
+    
+    register uint8_t* screenaddr = &SCREEN [y_in_lines][right_x_in_bytes];
+    *screenaddr = PointsR[right_x_in_bits&7];
+    
+    bytes_to_fill = (right_x_in_bytes - left_x_in_bytes)&31;
+    while (bytes_to_fill--){
+      *--screenaddr = 0xFF;
+    }
+    *screenaddr = PointsL[left_x_in_bits&7];
     }
   
   }
 
-void circle (byte cx, byte cy, byte r){
-  byte x=0,y=r,p=r;
+void circle_paint (uint8_t cx, uint8_t cy, uint8_t r){
+  uint8_t x=0,y=r,p=r;
   
   while (x<y){
-    ////RIGHT HALF
-      pset(cx,cy,x,y);
-      pset(cx,cy,y,x);
-      pset(cx,cy,x,-y);
-      pset(cx,cy,y,-x);
    
     if (p>y) {
       y--;
@@ -130,11 +130,17 @@ void circle (byte cx, byte cy, byte r){
     x++;
     p+=x;
     
+    /* right half-moon */
+    line_paint(cx,cy,x,y);
+    line_paint(cx,cy,y,x);
+    line_paint(cx,cy,x,-y);
+    line_paint(cx,cy,y,-x);   
   }
+    line_paint(cx,cy,r,0);  /* central line */
 }
 
-void cls (byte fill_mask, byte fill_colors){
-  byte* i=&ATTRS[23][31];
+void screen_clear (uint8_t fill_mask, uint8_t fill_colors){
+  uint8_t* i=&ATTRS[23][31];
   while (i!=&ATTRS[0][0]-1){
     i=line_fill(i,32,fill_colors);
   }
@@ -145,15 +151,15 @@ void cls (byte fill_mask, byte fill_colors){
 }
 
 void main () {
-  byte x=128,y=96,r=95;
-  sbyte dx=0,dy=0;
+  uint8_t x=128,y=96,r=32;
+  int8_t dx=0,dy=0;
   
-  __asm di __endasm;//INTERRUPTS DISABLED  
-  cls(0xFF,KW);
+  __asm di __endasm;/* HWMODE: interrupts disabled */  
+  screen_clear(0x55,KW);
   while (1){
-    circle (x,y,r);
+    circle_paint (x,y,r);
     x+=(dx>>4);y+=(dy>>4);
-    ////KEYBOARD CONTROL
+    /* keyboard control */
     if (key(ROWANY,KEYANY)) {
       dx+=(((key(ROWYP,KEYP))&&(dx<64))<<3);
       dx-=(((key(ROWYP,KEYO))&&(dx>-64))<<3);
@@ -161,10 +167,10 @@ void main () {
       dy-=(((key(ROWQT,KEYQ))&&(dy>-64))<<3);
       r+=key(ROWYP,KEYI)&&r<128;
       r-=key(ROWHEN,KEYK)&&r>0;
-      if (key(ROWBSP,KEYSP)) cls(0xAA,KW);
-    ////FRICTION
+      if (key(ROWBSP,KEYSP)) screen_clear(0xAA,KW);
     } else {
-      dx-=(dx>0)-(dx<0);//TRICK:sign extraction
+    /* friction */
+      dx-=(dx>0)-(dx<0); /* TRICK: sign extraction */
       dy-=(dy>0)-(dy<0);
     }
   }  
