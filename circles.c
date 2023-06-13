@@ -2,9 +2,9 @@
 * (copyleft)2023 1nd1g0
 * Fast vector graphics test for ZX Spectrum 48K
 *
-* Targets SDCC, being ported to C89 compilers
+* Targets SDCC, being ported to C89 compilers, so it
 * ASSUMES: No (u)int##_t support, TRUE = 1.
-*   short = int16, char = int8
+*   short = int16, char = int8, >> duplicates sign bit
 *
 * CONTROLS:
 *   Q,A,O,P, = move
@@ -78,8 +78,12 @@
   volatile __sfr __banked __at (0x7FFE) ROWBSP;
   enum {KEYB=0x10,KEYN=8,KEYM=4,KEYSY=2,KEYSP=1};
 
+uint8_t abs(int8_t s){
+  uint8_t const mask = s>>((sizeof s)*8-1);
+  return (s+mask)^mask;
+}
 
-uint8_t* line_fill(uint8_t* addr, uint8_t count, uint8_t mask){
+uint8_t* bytes_fill(uint8_t* addr, uint8_t count, uint8_t mask){
   register uint8_t m = mask;
   register uint8_t* a = addr;
   switch(count){ /* TRICK: Duff's device in action */
@@ -95,10 +99,9 @@ uint8_t* line_fill(uint8_t* addr, uint8_t count, uint8_t mask){
   return a;
 }
 
-inline void line_paint (uint8_t x, uint8_t y, uint8_t dx, int8_t dy){
+inline void bits_fill (uint8_t x, uint8_t y, uint8_t dx, int8_t dy){
   int8_t bytes_to_fill;
-  
-  uint8_t y_in_bits = (uint8_t)(y+dy); 
+  uint8_t y_in_bits = (y+dy); 
   if (y_in_bits<=191){ /* clip at the screen bottom */  
     uint8_t y_in_lines = ytolines(y_in_bits);
     uint8_t right_x_in_bits = (x+dx);
@@ -110,7 +113,7 @@ inline void line_paint (uint8_t x, uint8_t y, uint8_t dx, int8_t dy){
     *screenaddr = PointsR[right_x_in_bits&7];
     
     bytes_to_fill = (right_x_in_bytes - left_x_in_bytes);
-    if (--bytes_to_fill>0) --screenaddr = line_fill(screenaddr,bytes_to_fill,0xFF);
+    if (--bytes_to_fill>0) --screenaddr = bytes_fill(screenaddr,bytes_to_fill,0xFF);
     *screenaddr = PointsL[left_x_in_bits&7];
     }
   
@@ -129,22 +132,22 @@ void circle_paint (uint8_t cx, uint8_t cy, uint8_t r){
     p+=x;
     
     /* right half-moon */
-    line_paint(cx,cy,x,y);
-    line_paint(cx,cy,y,x);
-    line_paint(cx,cy,x,-y);
-    line_paint(cx,cy,y,-x);   
+    bits_fill(cx,cy,x,y);
+    bits_fill(cx,cy,y,x);
+    bits_fill(cx,cy,x,-y);
+    bits_fill(cx,cy,y,-x);   
   }
-    line_paint(cx,cy,r,0);  /* central line */
+    bits_fill(cx,cy,r,0);  /* central line */
 }
 
 void screen_clear (uint8_t fill_mask, uint8_t fill_colors){
   uint8_t* i=&ATTRS[23][31];
   while (i!=&ATTRS[0][0]-1){
-    i=line_fill(i,32,fill_colors);
+    i=bytes_fill(i,32,fill_colors);
   }
   
   while (i!=(&SCREEN[0][0])-1) {
-    i=line_fill(i,32,fill_mask);
+    i=bytes_fill(i,32,fill_mask);
   }  
 }
 
@@ -159,10 +162,10 @@ void main () {
     x+=(dx>>4);y+=(dy>>4);
     /* keyboard control */
     if (key(ROWANY,KEYANY)) {
-      dx+=(((key(ROWYP,KEYP))&&(dx<64))<<3);
-      dx-=(((key(ROWYP,KEYO))&&(dx>-64))<<3);
-      dy+=(((key(ROWAG,KEYA))&&(dy<64))<<3);
-      dy-=(((key(ROWQT,KEYQ))&&(dy>-64))<<3);
+      dx+=(((key(ROWYP,KEYP))&&(dx<64))<<4);
+      dx-=(((key(ROWYP,KEYO))&&(dx>-64))<<4);
+      dy+=(((key(ROWAG,KEYA))&&(dy<64))<<4);
+      dy-=(((key(ROWQT,KEYQ))&&(dy>-64))<<4);
       r+=key(ROWYP,KEYI)&&r<128;
       r-=key(ROWHEN,KEYK)&&r>0;
       if (key(ROWBSP,KEYSP)) screen_clear(0xAA,KW);
