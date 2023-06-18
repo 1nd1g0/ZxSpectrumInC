@@ -8,4 +8,4 @@ Feel free to improve keeping code style suitable for small narrow-windowed in-br
 
 =====
 
-[CLICK HERE to run to instantly compile this code with IDE and run with ZX 48K emulator in your Chrome/Firefox browser.](http://8bitworkshop.com/redir.html?platform=zx&githubURL=https%3A%2F%2Fgithub.com%2F1nd1g0%2FZxSpectrumInC&file=circles.c).
+[CLICK HERE to instantly compile this code with IDE and run with an ZX 48K emulator in your Chrome/Firefox browser.](http://8bitworkshop.com/redir.html?platform=zx&githubURL=https%3A%2F%2Fgithub.com%2F1nd1g0%2FZxSpectrumInC&file=circles.c).
