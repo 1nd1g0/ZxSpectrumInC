@@ -24,16 +24,13 @@ void circle_paint (uint8_t cx, uint8_t cy, uint8_t r) {
     if (p>y) {
       y--;
       p-=y;
+      pixels_fill(cx+x,cy+y,x<<1);
+      pixels_fill(cx+x,cy-y,x<<1);
     }
     x++;
-    p+=x;
-    
-    pixels_fill(cx+x,cy+y,x<<1);
+    p+=x;    
     pixels_fill(cx+y,cy+x,y<<1);
-    pixels_fill(cx+x,cy-y,x<<1);
     pixels_fill(cx+y,cy-x,y<<1);
-    
   }
-  
 }
 
