@@ -17,10 +17,9 @@
 void circle_paint (uint8_t cx, uint8_t cy, uint8_t r) {
   uint8_t x=0,y=r,p=r;
   
-  pixels_fill(cx+r,cy,r<<1);   /* central line */
-  
   while (x<y) {
-   
+    pixels_fill(cx+y,cy+x,y<<1);
+    pixels_fill(cx+y,cy-x,y<<1);
     if (p>y) {
       y--;
       p-=y;
@@ -28,9 +27,7 @@ void circle_paint (uint8_t cx, uint8_t cy, uint8_t r) {
       pixels_fill(cx+x,cy-y,x<<1);
     }
     x++;
-    p+=x;    
-    pixels_fill(cx+y,cy+x,y<<1);
-    pixels_fill(cx+y,cy-x,y<<1);
+    p+=x;
   }
 }
 

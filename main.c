@@ -17,6 +17,7 @@
 *   Break/Space = clear screen
 *
 *****************************************************/
+//#define DEBUG //Press 's' to singlestep, any key to slomo
 
 #include "zxspectrum.h"
 #include "circles.h"
@@ -32,7 +33,7 @@ void main (void) {
   y=SCREEN_HEIGHT/2;
   r=32;
   
-  __asm di __endasm; /* HWMODE: interrupts disabled */  
+  __asm ei __endasm; /* HWMODE: interrupts disabled */  
   BORDER = Blue;
   screen_clear(0);
   attrs_clear(BW);
@@ -66,8 +67,8 @@ void test_pixels_fill(){
   
   attrs_checkboard();
   
-  for (j=0;j<SCREEN_HEIGHT;j++) {
-    pixels_fill ( (SCREEN_WIDTH-SCREEN_HEIGHT)/2+j, j, j );
+  for (j=0;j<191;j++) {
+    pixels_fill ( 32+j, j, j );
   }
   
 }

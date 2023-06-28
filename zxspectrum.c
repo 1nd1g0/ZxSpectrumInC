@@ -54,9 +54,6 @@
   const uint8_t SolidPixelTailLeftM [8] = {0x01,0x03,0x07,0x0F,0x1F,0x3F,0x7F,0xFF};
 
 /* KEYBOARD HW */
-  inline uint8_t key(uint8_t row,uint8_t mask){
-    return (~row & mask) > 0;
-  }
   volatile __sfr __banked __at (0x00FE) ROWANY;
   enum {KEYANY=0x1F};
   volatile __sfr __banked __at (0xF7FE) ROW15;
@@ -68,13 +65,23 @@
   volatile __sfr __banked __at (0xDFFE) ROWYP;
   enum {KEYY=0x10,KEYU=8,KEYI=4,KEYO=2,KEYP=1};
   volatile __sfr __banked __at (0xFDFE) ROWAG;
-  enum {KEYG=0x10,KEYF=8,KEYD=4,ROW=2,KEYA=1};
+  enum {KEYG=0x10,KEYF=8,KEYD=4,KEYS=2,KEYA=1};
   volatile __sfr __banked __at (0xBFFE) ROWHEN;
   enum {KEYH=0x10,KEYJ=8,KEYK=4,KEYL=2,KEYEN=1};
   volatile __sfr __banked __at (0xFEFE) ROWSHV;
   enum {KEYV=0x10,KEYC=8,KEYX=4,KEYZ=2,KEYSH=1};
   volatile __sfr __banked __at (0x7FFE) ROWBSP;
   enum {KEYB=0x10,KEYN=8,KEYM=4,KEYSY=2,KEYSP=1};
+
+  inline uint8_t key(uint8_t row,uint8_t mask){
+    return (~row & mask) > 0;
+  }
+
+  void debug_step_on_key_s(void){
+    while (!key(ROWANY,KEYANY));
+    while (key(ROWAG,KEYS));
+     __asm ei halt __endasm;
+  }
 
 uint8_t* bytes_fill (uint8_t* addr, uint8_t count, uint8_t mask){
   register uint8_t m = mask;
@@ -96,6 +103,9 @@ void pixels_fill (uint8_t rx, uint8_t y, uint8_t count) {
   uint8_t* pen_address;
   static uint8_t last_y;
   
+  #ifdef DEBUG
+  debug_step_on_key_s();
+  #endif
   //clip...
   if ((y > SCREEN_HEIGHT-1) || (!count) || (last_y == y)) return; //...bottom
   last_y = y;  

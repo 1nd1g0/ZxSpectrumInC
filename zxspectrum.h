@@ -23,6 +23,7 @@
 /* Platform specific functions */
 inline uint8_t ytolines (uint8_t y_screen_coordinate);
 inline uint8_t key (uint8_t keyboard_row_port_address, uint8_t bitmask_of_keys);
+void debug_step_on_key_s(void);
 void pixels_fill (uint8_t rightmost_pixel_x, uint8_t pixel_line_y, uint8_t pixel_count);
 uint8_t* bytes_fill (uint8_t* video_ram_address, uint8_t byte_count, uint8_t mask2fill_with);
 void screen_clear (uint8_t filling_pixel_mask);

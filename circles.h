@@ -14,5 +14,6 @@
 
 /* Shape specific functions */
 
+void bits_fill (uint8_t center_x, uint8_t center_y, uint8_t delta_x, int8_t delta_y);
 void circle_paint (uint8_t center_x, uint8_t center_y, uint8_t radius);
 
