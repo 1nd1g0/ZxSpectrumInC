@@ -8,7 +8,7 @@
 * Fast vector graphics test for ZX Spectrum 48K
 *
 * Targets SDCC, being ported to C89 compilers, so it
-* ASSUMES: No (u)int##_t support, TRUE = 1.
+* ASSUMES: No external code, TRUE = 1.
 *   short = int16, char = int8, >> duplicates sign bit
 *
 *****************************************************/
@@ -19,7 +19,6 @@ void circle_paint (uint8_t cx, uint8_t cy, uint8_t r) {
   
   while (x<y) {
     pixels_fill(cx+y,cy+x,y<<1);
-    pixels_fill(cx+y,cy-x,y<<1);
     if (p>y) {
       y--;
       p-=y;
@@ -28,6 +27,7 @@ void circle_paint (uint8_t cx, uint8_t cy, uint8_t r) {
     }
     x++;
     p+=x;
+    pixels_fill(cx+y,cy-x,y<<1);
   }
 }
 

@@ -8,7 +8,7 @@
 * Fast vector graphics test for ZX Spectrum 48K
 *
 * Targets SDCC, being ported to C89 compilers, so it
-* ASSUMES: No (u)int##_t support, TRUE = 1.
+* ASSUMES: No external code, TRUE = 1.
 *   short = int16, char = int8, >> duplicates sign bit
 *
 *****************************************************/
@@ -54,32 +54,32 @@
   const uint8_t SolidPixelTailLeftM [8] = {0x01,0x03,0x07,0x0F,0x1F,0x3F,0x7F,0xFF};
 
 /* KEYBOARD HW */
-  volatile __sfr __banked __at (0x00FE) ROWANY;
-  enum {KEYANY=0x1F};
-  volatile __sfr __banked __at (0xF7FE) ROW15;
-  enum {KEY5=0x10,KEY4=8,KEY3=4,KEY2=2,KEY1=1};
-  volatile __sfr __banked __at (0xEFFE) ROW60;
-  enum {KEY6=0x10,KEY7=8,KEY8=4,KEY9=2,KEY0=1};
-  volatile __sfr __banked __at (0xFBFE) ROWQT;
-  enum {KEYT=0x10,KEYR=8,KEYE=4,KEYW=2,KEYQ=1};
-  volatile __sfr __banked __at (0xDFFE) ROWYP;
-  enum {KEYY=0x10,KEYU=8,KEYI=4,KEYO=2,KEYP=1};
-  volatile __sfr __banked __at (0xFDFE) ROWAG;
-  enum {KEYG=0x10,KEYF=8,KEYD=4,KEYS=2,KEYA=1};
-  volatile __sfr __banked __at (0xBFFE) ROWHEN;
-  enum {KEYH=0x10,KEYJ=8,KEYK=4,KEYL=2,KEYEN=1};
-  volatile __sfr __banked __at (0xFEFE) ROWSHV;
-  enum {KEYV=0x10,KEYC=8,KEYX=4,KEYZ=2,KEYSH=1};
-  volatile __sfr __banked __at (0x7FFE) ROWBSP;
-  enum {KEYB=0x10,KEYN=8,KEYM=4,KEYSY=2,KEYSP=1};
+  volatile __sfr __banked __at (0x00FE) ROW_ANY;
+  enum {KEY_ANY=0x1F};
+  volatile __sfr __banked __at (0xF7FE) ROW_15;
+  enum {KEY_5=0x10,KEY_4=8,KEY_3=4,KEY_2=2,KEY_1=1};
+  volatile __sfr __banked __at (0xEFFE) ROW_60;
+  enum {KEY_6=0x10,KEY_7=8,KEY_8=4,KEY_9=2,KEY_0=1};
+  volatile __sfr __banked __at (0xFBFE) ROW_QT;
+  enum {KEY_T=0x10,KEY_R=8,KEY_E=4,KEY_W=2,KEY_Q=1};
+  volatile __sfr __banked __at (0xDFFE) ROW_YP;
+  enum {KEY_Y=0x10,KEY_U=8,KEY_I=4,KEY_O=2,KEY_P=1};
+  volatile __sfr __banked __at (0xFDFE) ROW_AG;
+  enum {KEY_G=0x10,KEY_F=8,KEY_D=4,KEY_S=2,KEY_A=1};
+  volatile __sfr __banked __at (0xBFFE) ROW_HEN;
+  enum {KEY_H=0x10,KEY_J=8,KEY_K=4,KEY_L=2,KEY_EN=1};
+  volatile __sfr __banked __at (0xFEFE) ROW_SHV;
+  enum {KEY_V=0x10,KEY_C=8,KEY_X=4,KEY_Z=2,KEY_SH=1};
+  volatile __sfr __banked __at (0x7FFE) ROW_BSP;
+  enum {KEY_B=0x10,KEY_N=8,KEY_M=4,KEY_SY=2,KEY_SP=1};
 
   inline uint8_t key(uint8_t row,uint8_t mask){
     return (~row & mask) > 0;
   }
 
   void debug_step_on_key_s(void){
-    while (!key(ROWANY,KEYANY));
-    while (key(ROWAG,KEYS));
+    while (!key(ROW_ANY,KEY_ANY));
+    while (key(ROW_AG,KEY_S));
      __asm ei halt __endasm;
   }
 
@@ -107,18 +107,22 @@ void pixels_fill (uint8_t rx, uint8_t y, uint8_t count) {
   debug_step_on_key_s();
   #endif
   //clip...
-  if ((y > SCREEN_HEIGHT-1) || (!count) || (last_y == y)) return; //...bottom
+  if ((y > SCREEN_HEIGHT-1) || (!count) || (last_y == y))
+    return; //...bottom
   last_y = y;  
-  if (rx < (count-1)) count = rx + 1; //...left
+  if (rx < (count-1))
+    count = rx + 1; //...left
   pen_address = & SCREEN [ytolines(y)] [(rx >> 3)];
   
-    if ((rx & 7) >= (count - 1)){ *pen_address = SolidPixelTailRight[(rx & 7)]
-                                               & SolidPixelTailLeft [(rx & 7) - (count)];
+    if ((rx & 7) >= (count - 1)){
+      *pen_address = SolidPixelTailRight[(rx & 7)]
+                   & SolidPixelTailLeft [(rx & 7) - (count)];
     } else {
       *pen_address = SolidPixelTailRight[(rx & 7)];
       pen_address--;
       count -= (rx & 7) + 1;
-      if (count>>3) pen_address = bytes_fill (pen_address,count>>3,0xFF);
+      if (count>>3)
+        pen_address = bytes_fill (pen_address,count>>3,0xFF);
       *pen_address = SolidPixelTailLeftM [((count)&7)];
     }
 

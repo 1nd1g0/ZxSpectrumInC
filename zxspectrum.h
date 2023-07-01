@@ -6,19 +6,20 @@
 * Fast vector graphics test for ZX Spectrum 48K
 *
 * Targets SDCC, being ported to C89 compilers, so it
-* ASSUMES: No (u)int##_t support, TRUE = 1.
+* ASSUMES: No external code, TRUE = 1.
 *   short = int16, char = int8, >> duplicates sign bit
 *
 *
 *****************************************************/
 
 /* Z80 main data types */
-#define uint16_t unsigned short
-#define uint8_t unsigned char
-#define int8_t signed char
+
+typedef unsigned short uint16_t;
+typedef unsigned char  uint8_t;
+typedef signed char    int8_t;
 
 #define SCREEN_HEIGHT 192
-#define SCREEN_WIDTH 256
+#define SCREEN_WIDTH  256
 
 /* Platform specific functions */
 inline uint8_t ytolines (uint8_t y_screen_coordinate);

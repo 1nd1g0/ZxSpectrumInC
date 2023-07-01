@@ -8,7 +8,7 @@
 * Fast vector graphics test for ZX Spectrum 48K
 *
 * Targets SDCC, being ported to C89 compilers, so it
-* ASSUMES: No (u)int##_t support, TRUE = 1.
+* ASSUMES: No external code, TRUE = 1.
 *   short = int16, char = int8, >> duplicates sign bit
 *
 * CONTROLS:
@@ -23,6 +23,7 @@
 #include "circles.h"
 #include "zxspectrum.c"
 #include "circles.c"
+
 void test_pixels_fill();
 
 void main (void) {
@@ -45,14 +46,15 @@ void main (void) {
     circle_paint (x,y,r);
     x+=(dx>>4);y+=(dy>>4);
     /* keyboard control */
-    if (key(ROWANY,KEYANY)) {
-      dx+=(((key(ROWYP,KEYP))&&(dx<64))<<4);
-      dx-=(((key(ROWYP,KEYO))&&(dx>-64))<<4);
-      dy+=(((key(ROWAG,KEYA))&&(dy<64))<<4);
-      dy-=(((key(ROWQT,KEYQ))&&(dy>-64))<<4);
-      r+=key(ROWYP,KEYI)&&r<128;
-      r-=key(ROWHEN,KEYK)&&r>0;
-      if (key(ROWBSP,KEYSP)) screen_clear(0);
+    if (key(ROW_ANY,KEY_ANY)) {
+      dx+=(((key(ROW_YP,KEY_P))&&(dx<64))<<4);
+      dx-=(((key(ROW_YP,KEY_O))&&(dx>-64))<<4);
+      dy+=(((key(ROW_AG,KEY_A))&&(dy<64))<<4);
+      dy-=(((key(ROW_QT,KEY_Q))&&(dy>-64))<<4);
+      r+=key(ROW_YP,KEY_I)&&r<128;
+      r-=key(ROW_HEN,KEY_K)&&r>0;
+      if (key(ROW_BSP,KEY_SP))
+        screen_clear(0);
     } else {
     /* friction */
       dx-=(dx>0)-(dx<0); /* TRICK: sign extraction */
@@ -67,7 +69,7 @@ void test_pixels_fill(){
   
   attrs_checkboard();
   
-  for (j=0;j<191;j++) {
+  for (j=0;j<SCREEN_HEIGHT;j++) {
     pixels_fill ( 32+j, j, j );
   }
   
