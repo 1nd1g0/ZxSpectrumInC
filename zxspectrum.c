@@ -15,9 +15,13 @@
 
 //#link "zxspectrum.c"
 
+/* SDCC specific Z80 extentions wrappers*/
+  #define PORT(p) volatile __sfr __banked __at (p)
+  #define MEMADR(m) __at (m)
+
 /* BORDER HW */
   enum {Black,Blue,Red,Magenta,Green,Cyan,Yellow,White};
-  volatile __sfr __at (0xFFFE) BORDER;
+  PORT(0xFFFE) BORDER;
 
 /* VRAM HW
     Colour attribute pallette without flash bit variants.
@@ -41,8 +45,8 @@
     BYK,BYB,BYR,BYM,BYG,BYC,BYY,BYW,
     BWK,BWB,BWR,BWM,BWG,BWC,BWY,BWW
   };
-  uint8_t __at (0x4000) SCREEN[192][32];
-  uint8_t __at (0x5800)  ATTRS[24] [32];
+  uint8_t MEMADR(0x4000) SCREEN[192][32];
+  uint8_t MEMADR(0x5800)  ATTRS[24] [32];
 
   inline uint8_t ytolines(uint8_t y){
     return (y & 0xc0)|((y & 7)<<3)|((y & 0x38)>>3);
@@ -54,24 +58,16 @@
   const uint8_t SolidPixelTailLeftM [8] = {0x01,0x03,0x07,0x0F,0x1F,0x3F,0x7F,0xFF};
 
 /* KEYBOARD HW */
-  volatile __sfr __banked __at (0x00FE) ROW_ANY;
-  enum {KEY_ANY=0x1F};
-  volatile __sfr __banked __at (0xF7FE) ROW_15;
-  enum {KEY_5=0x10,KEY_4=8,KEY_3=4,KEY_2=2,KEY_1=1};
-  volatile __sfr __banked __at (0xEFFE) ROW_60;
-  enum {KEY_6=0x10,KEY_7=8,KEY_8=4,KEY_9=2,KEY_0=1};
-  volatile __sfr __banked __at (0xFBFE) ROW_QT;
-  enum {KEY_T=0x10,KEY_R=8,KEY_E=4,KEY_W=2,KEY_Q=1};
-  volatile __sfr __banked __at (0xDFFE) ROW_YP;
-  enum {KEY_Y=0x10,KEY_U=8,KEY_I=4,KEY_O=2,KEY_P=1};
-  volatile __sfr __banked __at (0xFDFE) ROW_AG;
-  enum {KEY_G=0x10,KEY_F=8,KEY_D=4,KEY_S=2,KEY_A=1};
-  volatile __sfr __banked __at (0xBFFE) ROW_HEN;
-  enum {KEY_H=0x10,KEY_J=8,KEY_K=4,KEY_L=2,KEY_EN=1};
-  volatile __sfr __banked __at (0xFEFE) ROW_SHV;
-  enum {KEY_V=0x10,KEY_C=8,KEY_X=4,KEY_Z=2,KEY_SH=1};
-  volatile __sfr __banked __at (0x7FFE) ROW_BSP;
-  enum {KEY_B=0x10,KEY_N=8,KEY_M=4,KEY_SY=2,KEY_SP=1};
+
+  PORT(0x00FE) ROW_ANY;  enum {KEY_ANY=31};
+  PORT(0xF7FE) ROW_15;   enum {KEY_5=16,KEY_4=8,KEY_3=4,KEY_2=2,KEY_1=1};
+  PORT(0xEFFE)   ROW_60; enum {KEY_6=16,KEY_7=8,KEY_8=4,KEY_9=2,KEY_0=1};
+  PORT(0xFBFE) ROW_QT;   enum {KEY_T=16,KEY_R=8,KEY_E=4,KEY_W=2,KEY_Q=1};
+  PORT(0xDFFE)   ROW_YP; enum {KEY_Y=16,KEY_U=8,KEY_I=4,KEY_O=2,KEY_P=1};
+  PORT(0xFDFE) ROW_AG;   enum {KEY_G=16,KEY_F=8,KEY_D=4,KEY_S=2,KEY_A=1};
+  PORT(0xBFFE)   ROW_HEN;enum {KEY_H=16,KEY_J=8,KEY_K=4,KEY_L=2,KEY_EN=1};
+  PORT(0xFEFE) ROW_SHV;  enum {KEY_V=16,KEY_C=8,KEY_X=4,KEY_Z=2,KEY_SH=1};
+  PORT(0x7FFE)   ROW_BSP;enum {KEY_B=16,KEY_N=8,KEY_M=4,KEY_SY=2,KEY_SP=1};
 
   inline uint8_t key(uint8_t row,uint8_t mask){
     return (~row & mask) > 0;
@@ -154,10 +150,9 @@ void attrs_checkboard() {
   
   p = & ATTRS[23][31];
   
-  for (i=sizeof ATTRS;i>0;i--) {
+  for (i=sizeof ATTRS; i>0; i--, p--) {
     *p = *p ^ (( ((((uint16_t)p)>>5)&1)
             ^ ((     (uint8_t)p)&1))<<3);
-    p--;
   }
 
 }
