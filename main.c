@@ -15,6 +15,7 @@
 *   Q,A,O,P, = move
 *   I,K = change radius
 *   Break/Space = clear screen
+*   C = toggle checkboard
 *
 *****************************************************/
 //#define DEBUG //Press 's' to singlestep, any key to slomo
@@ -55,6 +56,8 @@ void main (void) {
       r-=key(ROW_HEN,KEY_K)&&r>0;
       if (key(ROW_BSP,KEY_SP))
         screen_clear(0);
+      if (key(ROW_SHV,KEY_C))
+          attrs_checkboard();
     } else {
     /* friction */
       dx-=(dx>0)-(dx<0); /* TRICK: sign extraction */
